@@ -1,4 +1,6 @@
-import { AnimationTemplate, Animation, Direction } from "../Types";
+import { RingBuffer } from "ring-buffer-ts";
+import { AnimationTemplate, Animation, Direction, Inputs } from "../../Types";
+import { crouchSit, dashLeft, dashRight, walkLeft, walkRight } from "./Inputs";
 
 class Patchouli {
     // LMAO
@@ -20,6 +22,7 @@ class Patchouli {
     mouseX: number; mouseY: number; // Mouse position used in drag calculations
     offset: { x: number, y: number }; // just used to store the offset related to dragging the patchouli
     walking: Direction;
+    isSitting: boolean;
 
     constructor(sheet: HTMLImageElement, xpos: number, ypos: number, animation: Animation[], animationFrame: number, animations: AnimationTemplate, facing: Direction, canvas: HTMLCanvasElement) {
         this.sheet = sheet;
@@ -49,9 +52,10 @@ class Patchouli {
             y: 0,
         };
         this.walking = Direction.None;
+        this.isSitting = false;
     }
 
-    step() {
+    step(inputBuffer: RingBuffer<Inputs>) {
         // calculate max/mins for the canvas collision coords
         this.maxY = this.canvas.height - 100;
         this.minY = this.getCurrentFrame().height / 2;
@@ -98,6 +102,7 @@ class Patchouli {
             //     return;
             // }
         }
+        this.evalInput(inputBuffer);
         this.evalAction();
         // increase the time between frames
         this.frameTime++;
@@ -120,15 +125,74 @@ class Patchouli {
         }
     }
 
+    evalInput(inputBuffer: RingBuffer<Inputs>) {
+        // if the buffer is empty, return
+        if (inputBuffer.isEmpty()) {
+            return;
+        }
+        // if the buffer is not empty, get the next input
+        let inputArr = inputBuffer.toArray().reverse();
+        // reset animation
+
+        if (dashLeft(inputArr.slice(0, 7))) {
+            if (this.facing == Direction.Left) {
+                this.setDashForward();
+            }
+            else {
+                // this.setDashBackward();
+            }
+            for (let i = 0; i < 6; i++) {
+                inputBuffer.removeLast();
+            }
+            return;
+        }
+        if (dashRight(inputArr.slice(0, 7))) {
+            if (this.facing == Direction.Right) {
+                this.setDashForward();
+            }
+            // else {
+            //     this.setDashBackward();
+            // }
+            for (let i = 0; i < 6; i++) {
+                inputBuffer.removeLast();
+            }
+            return;
+        }
+        if (walkLeft(inputArr.slice(0, 2))) {
+            this.setWalk(Direction.Left);
+            for (let i = 0; i < 1; i++) {
+                inputBuffer.removeLast();
+            }
+            return;
+        }
+        if (walkRight(inputArr.slice(0, 2))) {
+            this.setWalk(Direction.Right);
+            for (let i = 0; i < 1; i++) {
+                inputBuffer.removeLast();
+            }
+            return;
+        }
+        if (crouchSit(inputArr.slice(0, 2))) {
+            this.setCrouch();
+            for (let i = 0; i < 1; i++) {
+                inputBuffer.removeLast();
+            }
+            return;
+        }
+        if (this.animation != this.animations.Idle && this.animation != this.animations.DashBack && this.animation != this.animations.DashForward) {
+            this.setIdle();
+        }
+    }
+
     evalAction() {
         if (this.ypos != this.ygoal && this.animation != this.animations.Floating && this.paused == false) {
             this.setFloat();
         }
+        else if (this.animation == this.animations.DashForward) {
+            this.setDashForward();
+        }
         else if (this.walking != Direction.None || this.animation == this.animations.Walking) {
-            if (this.walking != Direction.None) {
-                this.setWalk(this.walking);
-            }
-            else {
+            if (this.walking == Direction.None) {
                 this.setIdle();
             }
         }
@@ -166,18 +230,41 @@ class Patchouli {
         this.animation = this.animations.Sitting;
     }
 
+    setCrouch() {
+        if (this.animation != this.animations.Crouch) {
+            this.animationFrame = 0;
+            this.animation = this.animations.Crouch;
+        }
+    }
+
     setFloat() {
         this.animation = this.animations.Floating;
         this.animationFrame = 0;
     }
 
     setWalk(direction: Direction) {
-        if (this.animationFrame > this.animations.Walking[0].frames.length - 1) {
-            this.animationFrame = 0;
+        if (this.animation == this.animations.DashForward || this.animation == this.animations.DashBack) {
+            return;
         }
-        this.animation = this.animations.Walking;
+        if (this.animation != this.animations.Walking) {
+            this.animationFrame = 0;
+            this.animation = this.animations.Walking;
+        }
         this.xpos += direction == Direction.Left ? -2 : 2;
         this.facing = direction;
+        this.walking = direction;
+    }
+
+    setDashForward() {
+        if (this.animation != this.animations.DashForward) {
+            this.animationFrame = 0;
+            this.animation = this.animations.DashForward;
+        }
+        if (this.animationFrame > this.getAnimation().frames.length - 2 || this.animationFrame < 1) {
+            this.xpos += this.facing == Direction.Left ? -1 : 1;
+            return;
+        }
+        this.xpos += this.facing == Direction.Left ? -4 : 4;
     }
 
     setIdle() {
@@ -195,7 +282,6 @@ class Patchouli {
 
     getDrawPosition() {
         let frame = this.getCurrentFrame();
-        console.log(frame);
         return [this.xpos + frame.xOff, this.ypos + frame.yOff];
     }
 

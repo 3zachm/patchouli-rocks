@@ -179,6 +179,35 @@ const PatchySet1: AnimationTemplate = {
             new Frame(1075, 618, 0, 0, 92, 88),
         ], 2, true)
     ],
+    DashForward: [
+        new Animation([
+            new Frame(10, 864, 0, 0, 60, 100),
+            new Frame(76, 867, 0, 0, 79, 97),
+            new Frame(161, 871, 0, 0, 90, 93),
+            new Frame(257, 869, 0, 0, 89, 95),
+            new Frame(352, 880, 0, 0, 76, 84),
+            new Frame(434, 874, 0, 0, 78, 90),
+            new Frame(518, 873, 0, 0, 69, 91),
+            // new Frame(593, 867, 0, 0, 55, 97),
+            // new Frame(654, 864, 0, 0, 60, 100),
+            new Frame(342, 406, 0, 12, 47, 85),
+            new Frame(395, 397, 0, 4, 47, 94),
+        ], 2, false),
+        new Animation([
+            new Frame(714, 864, 0, 0, 60, 100),
+            new Frame(780, 867, 0, 0, 55, 97),
+            new Frame(841, 873, 0, 0, 69, 91),
+            new Frame(917, 874, 0, 0, 78, 90),
+            new Frame(1000, 880, 0, 0, 76, 84),
+            new Frame(1082, 869, 0, 0, 89, 95),
+            new Frame(1177, 871, 0, 0, 90, 93),
+            // new Frame(1273, 867, 0, 0, 79, 97),
+            // new Frame(1358, 864, 0, 0, 60, 100),
+            new Frame(588, 406, 0, 12, 47, 85),
+            new Frame(536, 397, 1, 4, 47, 94),
+        ], 2, false),
+    ],
+    DashBack: [],
 }
 
 export default PatchySet1;

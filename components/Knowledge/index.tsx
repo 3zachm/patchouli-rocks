@@ -1,13 +1,14 @@
 import { memo, ReactElement, useEffect, useState } from "react";
 import PatchySet1 from "./Animations/PatchySet1";
-import Patchouli from "./Characters/Patchouli";
-import PatchouliAI from "./Characters/PatchouliAI";
+import Patchouli from "./Characters/Patchouli/Patchouli";
+import PatchouliAI from "./Characters/Patchouli/PatchouliAI";
 import { loadImage } from "./Helpers";
 import { Direction, Inputs } from "./Types";
 import { RingBuffer } from 'ring-buffer-ts';
 
 
-let inputBuffer = new RingBuffer<Inputs>(8);
+let inputBuffer = new RingBuffer<Inputs>(15);
+let currentKey: string | null = null;
 
 let chars: (PatchouliAI | Patchouli)[] = [];
 interface KnowledgeProps {
@@ -94,50 +95,92 @@ function mouseup(e: any) {
     selectedPatchy = null;
 }
 
-function anyClick (e: any) {
+function anyClick(e: any) {
     if (e.target.id == "patchouli-thing") {
         spawn_patchy();
     }
 }
 
 // player control
-function onkeydown(e: KeyboardEvent) {
+function onkeydown(e: KeyboardEvent) { currentKey = e.key; }
+function onkeyup(e: KeyboardEvent) { currentKey = null; }
+function evalInputKey() {
     if (playerPatchy != null) {
-        switch (e.key) {
-            case "ArrowUp":
+        switch (currentKey) {
+            case "Numpad1":
+            case "1":
+            case "End":
+                inputBuffer.add(Inputs.DownRight);
                 break;
+            case "Numpad2":
             case "ArrowDown":
-                playerPatchy.animationFrame = 0;
-                playerPatchy.animation = playerPatchy.animations.Crouch;
+            case "2":
+                inputBuffer.add(Inputs.Down);
                 break;
+            case "Numpad3":
+            case "3":
+            case "PageDown":
+                inputBuffer.add(Inputs.DownLeft);
+                break;
+            case "Numpad4":
+            case "4":
             case "ArrowLeft":
-                playerPatchy.walking = Direction.Left;
+                inputBuffer.add(Inputs.Left);
                 break;
+            case "Numpad5":
+            case "5":
+                inputBuffer.add(Inputs.Neutral);
+                break;
+            case "Numpad6":
+            case "6":
             case "ArrowRight":
-                playerPatchy.walking = Direction.Right;
+                inputBuffer.add(Inputs.Right);
+                break;
+            case "Numpad7":
+            case "7":
+            case "Home":
+                inputBuffer.add(Inputs.UpLeft);
+                break;
+            case "Numpad8":
+            case "8":
+            case "ArrowUp":
+                inputBuffer.add(Inputs.Up);
+                break;
+            case "Numpad9":
+            case "9":
+            case "PageUp":
+                inputBuffer.add(Inputs.UpRight);
+                break;
+            case "z":
+                inputBuffer.add(Inputs.Attack);
+                break;
+            case "x":
+                inputBuffer.add(Inputs.WeakProjectile);
+                break;
+            case "c":
+                inputBuffer.add(Inputs.StrongProjectile);
+                break;
+            case "a":
+                inputBuffer.add(Inputs.Flight);
+                break;
+            case "s":
+                inputBuffer.add(Inputs.Attack);
+                inputBuffer.add(Inputs.WeakProjectile);
+                break;
+            case "d":
+                inputBuffer.add(Inputs.WeakProjectile);
+                inputBuffer.add(Inputs.StrongProjectile);
+                break;
+            case "q":
+                // pause
+                break;
+            default:
+                inputBuffer.add(Inputs.Neutral);
                 break;
         }
     }
 }
 
-function onkeyup(e: KeyboardEvent) {
-    if (playerPatchy != null) {
-        switch (e.key) {
-            case "ArrowUp":
-                break;
-            case "ArrowDown":
-                break;
-            case "ArrowLeft":
-                playerPatchy.walking = Direction.None;
-                break;
-            case "ArrowRight":
-                playerPatchy.walking = Direction.None;
-                break;
-            default:
-                break;
-        }
-    }
-}
 
 const spawn_patchy = () => {
     let x = Math.floor(Math.random() * (canvas.width - 100 + 1)) + 100;
@@ -162,13 +205,21 @@ function step() {
 
         updateRender = (fps / 30) - frameCount <= 0 ? true : false;
 
+        // set states for controlled patchy
+        if (playerPatchy != null) {
+            // input handling function
+        }
+
         chars.forEach(element => {
             if (resetAnimation) {
                 element.setIdle();
             }
             element.ygoal = canvas.height - 100;
             if (updateRender) {
-                element.step();
+                if (element == playerPatchy) {
+                    evalInputKey();
+                }
+                element.step(inputBuffer);
                 frameCount = 0;
             }
             const [posX, posY] = element.getDrawPosition();
@@ -227,7 +278,7 @@ const Knowledge = memo(({ sheet, children }: KnowledgeProps) => {
 
     chars = [
         playerPatchy,
-        new PatchouliAI(patchySheet, dWidth - 1000, dHeight, PatchySet1.Falling, 0, PatchySet1, Direction.Right, canvas),
+        // new PatchouliAI(patchySheet, dWidth - 1000, dHeight, PatchySet1.Falling, 0, PatchySet1, Direction.Right, canvas),
     ];
 
     fpsInterval = 1000 / fps;

@@ -1,5 +1,6 @@
-import { getRandomInt } from "../Helpers";
-import { AnimationTemplate, Animation, Direction } from "../Types";
+import { RingBuffer } from "ring-buffer-ts";
+import { getRandomInt } from "../../Helpers";
+import { AnimationTemplate, Animation, Direction, Inputs } from "../../Types";
 
 class PatchouliAI {
     // LMAO
@@ -53,7 +54,7 @@ class PatchouliAI {
         }
     }
 
-    step() {
+    step(inputBuffer: RingBuffer<Inputs>) {
         // calculate max/mins for the canvas collision coords
         this.maxY = this.canvas.height - 100;
         this.minY = this.getCurrentFrame().height / 2;

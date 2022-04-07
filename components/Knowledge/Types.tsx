@@ -1,7 +1,8 @@
 enum Inputs {
-    BotRight = 1,
-    Bottom = 2,
-    BotLeft = 3,
+    None = 0,
+    DownRight = 1,
+    Down = 2,
+    DownLeft = 3,
     Left = 4,
     Neutral = 5,
     Right = 6,
@@ -53,6 +54,8 @@ interface AnimationTemplate {
     GettingUp: Animation[];
     Dragged: Animation[];
     Crouch: Animation[];
+    DashForward: Animation[];
+    DashBack: Animation[];
 }
 
 export {
